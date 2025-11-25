@@ -4,7 +4,7 @@ import { ImageUploader } from './ImageUploader';
 import { DiagnosisReport } from './DiagnosisReport';
 import { LoadingSpinner } from './LoadingSpinner';
 import { AuthModal } from './AuthModal';
-import { analyzeTongueImage } from './services/geminiService';
+import { analyzeTongueImage } from './geminiService';
 import { DiagnosisResult } from './types';
 
 export default function App() {
