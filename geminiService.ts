@@ -13,7 +13,7 @@ const ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key-for-build' });
 export const analyzeTongueImage = async (base64Image: string): Promise<DiagnosisResult> => {
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: {
         parts: [
           {
