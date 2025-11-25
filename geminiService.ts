@@ -1,3 +1,4 @@
+// 强制更新 v1
 import { GoogleGenAI } from "@google/genai";
 import { TCM_SYSTEM_INSTRUCTION, DIAGNOSIS_SCHEMA } from "./constants";
 import { DiagnosisResult } from "./types";
