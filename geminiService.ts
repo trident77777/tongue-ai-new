@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { TCM_SYSTEM_INSTRUCTION, DIAGNOSIS_SCHEMA } from "../constants";
-import { DiagnosisResult } from "../types";
+import { TCM_SYSTEM_INSTRUCTION, DIAGNOSIS_SCHEMA } from "./constants";
+import { DiagnosisResult } from "./types";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
