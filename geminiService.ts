@@ -4,76 +4,83 @@ import { DiagnosisResult } from "./types";
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 export const analyzeTongueImage = async (base64Image: string): Promise<DiagnosisResult> => {
-  // 1. 检查 Key
   if (!apiKey) {
     alert("错误：API Key 未配置！");
     throw new Error("API Key is missing");
   }
 
-  // 2. 准备数据
-  const cleanBase64 = base64Image.includes('base64,') 
-    ? base64Image.split('base64,')[1] 
-    : base64Image;
+  // ==========================================
+  // 🕵️‍♂️ 第一步：先问问 Google 到底有哪些模型可用？
+  // ==========================================
+  try {
+    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const listResp = await fetch(listUrl);
+    const listData = await listResp.json();
+    
+    if (listData.models) {
+      // 过滤出名字里带 "gemini" 的模型
+      const modelNames = listData.models
+        .map((m: any) => m.name.replace('models/', '')) // 去掉前缀
+        .filter((n: string) => n.includes('gemini'));
+      
+      // 🚨【关键弹窗】🚨 
+      // 请把这个弹窗里的内容拍照或复制告诉我！
+      alert(`【侦探报告】你的 API Key 可用的模型有：\n${modelNames.join('\n')}`);
+    } else {
+      alert(`【侦探报告】获取模型列表失败: ${JSON.stringify(listData)}`);
+    }
+  } catch (e: any) {
+    alert(`【侦探报告】连列表都拉不到，可能是网络或Key的问题: ${e.message}`);
+  }
 
-  // 【核心修改】这里改成了 gemini-1.5-flash-001 (最稳定的特定版本)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${apiKey}`;
+  // ==========================================
+  // 🕵️‍♂️ 第二步：尝试使用列表里的第一个 1.5 模型
+  // ==========================================
+  
+  // 这里我们暂时还是用 gemini-1.5-flash 试最后一次，
+  // 但重点是上面的弹窗会告诉我们真正的答案。
+  const targetModel = 'gemini-1.5-flash'; 
 
-  // 3. 准备请求体 (使用标准的驼峰命名 camelCase，防止解析错误)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
+
+  const cleanBase64 = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
+
   const payload = {
     contents: [{
       parts: [
         { text: "请根据这张图片进行专业的中医舌诊分析。如果图片不是舌头，请在overview中说明。" },
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: cleanBase64
-          }
-        }
+        { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
       ]
     }],
     generationConfig: {
       responseMimeType: "application/json",
-      responseSchema: DIAGNOSIS_SCHEMA, 
+      responseSchema: DIAGNOSIS_SCHEMA,
       temperature: 0.5
-    },
-    systemInstruction: {
-        parts: [{ text: TCM_SYSTEM_INSTRUCTION }]
     }
   };
 
   try {
-    // 4. 发送请求
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    // 5. 处理错误
     if (!response.ok) {
       const errorData = await response.json();
-      const errorMessage = errorData.error?.message || response.statusText;
-      // 弹窗显示具体的 API 错误
-      alert(`Google API 报错: ${errorMessage}`);
-      throw new Error(errorMessage);
+      throw new Error(errorData.error?.message || response.statusText);
     }
 
-    // 6. 解析结果
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!text) {
-        throw new Error("API 返回了空内容");
-    }
+    if (!text) throw new Error("API 返回空内容");
 
     return JSON.parse(text) as DiagnosisResult;
 
   } catch (error: any) {
-    console.error("Fetch Error:", error);
-    if (!error.message.includes("Google API 报错")) {
-        alert(`网络或解析错误: ${error.message}`);
+    // 如果上面的弹窗已经出来了，这个报错就不重要了，我们主要看那个列表
+    if (!error.message.includes("侦探报告")) {
+       alert(`分析尝试失败: ${error.message}`);
     }
     throw error;
   }
