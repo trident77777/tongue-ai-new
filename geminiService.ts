@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { TCM_SYSTEM_INSTRUCTION, DIAGNOSIS_SCHEMA } from "../constants";
 import { DiagnosisResult } from "../types";
 
-const apiKey = process.env.API_KEY;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!apiKey) {
   console.error("API_KEY is not defined in the environment variables.");
