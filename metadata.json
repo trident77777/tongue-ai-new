@@ -1,0 +1,7 @@
+{
+  "name": "TCM Tongue Diagnosis AI (智能舌诊)",
+  "description": "An interactive AI application based on Traditional Chinese Medicine (TCM) theory to analyze tongue images for health insights.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
