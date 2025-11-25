@@ -10,30 +10,30 @@ export const analyzeTongueImage = async (base64Image: string): Promise<Diagnosis
     throw new Error("API Key is missing");
   }
 
-  // 2. 准备数据 (去掉 base64 头部，如果有的话)
+  // 2. 准备数据
   const cleanBase64 = base64Image.includes('base64,') 
     ? base64Image.split('base64,')[1] 
     : base64Image;
 
-  // 3. 直接构建请求 URL (使用官方 REST API，绕过 SDK 问题)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  // 【核心修改】这里改成了 gemini-1.5-flash-001 (最稳定的特定版本)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${apiKey}`;
 
-  // 4. 准备请求体
+  // 3. 准备请求体 (使用标准的驼峰命名 camelCase，防止解析错误)
   const payload = {
     contents: [{
       parts: [
         { text: "请根据这张图片进行专业的中医舌诊分析。如果图片不是舌头，请在overview中说明。" },
         {
-          inline_data: {
-            mime_type: "image/jpeg",
+          inlineData: {
+            mimeType: "image/jpeg",
             data: cleanBase64
           }
         }
       ]
     }],
     generationConfig: {
-      response_mime_type: "application/json",
-      response_schema: DIAGNOSIS_SCHEMA, // 确保 constants.ts 里的 Schema 格式正确
+      responseMimeType: "application/json",
+      responseSchema: DIAGNOSIS_SCHEMA, 
       temperature: 0.5
     },
     systemInstruction: {
@@ -42,7 +42,7 @@ export const analyzeTongueImage = async (base64Image: string): Promise<Diagnosis
   };
 
   try {
-    // 5. 发送请求 (Native Fetch)
+    // 4. 发送请求
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -51,15 +51,16 @@ export const analyzeTongueImage = async (base64Image: string): Promise<Diagnosis
       body: JSON.stringify(payload)
     });
 
-    // 6. 处理错误
+    // 5. 处理错误
     if (!response.ok) {
       const errorData = await response.json();
       const errorMessage = errorData.error?.message || response.statusText;
-      alert(`API 请求失败: ${errorMessage}`);
+      // 弹窗显示具体的 API 错误
+      alert(`Google API 报错: ${errorMessage}`);
       throw new Error(errorMessage);
     }
 
-    // 7. 解析结果
+    // 6. 解析结果
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
@@ -71,8 +72,7 @@ export const analyzeTongueImage = async (base64Image: string): Promise<Diagnosis
 
   } catch (error: any) {
     console.error("Fetch Error:", error);
-    // 如果不是上面已经 alert 过的错误，这里再弹一次
-    if (!error.message.includes("API 请求失败")) {
+    if (!error.message.includes("Google API 报错")) {
         alert(`网络或解析错误: ${error.message}`);
     }
     throw error;
